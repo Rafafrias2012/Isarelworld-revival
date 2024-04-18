@@ -1,0 +1,8 @@
+.bonzi {
+  position: absolute;
+  width: 100px; /* Adjust as needed */
+  height: 100px; /* Adjust as needed */
+  background-image: url('https://raw.githubusercontent.com/Funyegg/OnuteWorld/main/client/skins/bonz.png');
+  background-size: contain;
+  cursor: pointer;
+}
