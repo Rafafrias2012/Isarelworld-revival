@@ -1,23 +1,24 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
+
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
 
 let bonziPosition = { x: 0, y: 0 };
 
 io.on('connection', (socket) => {
   console.log('A user connected');
 
-  // Send initial position to the new client
   socket.emit('initialPosition', bonziPosition);
 
-  // Update position when a client moves Bonzi Buddy
   socket.on('moveBonzi', (position) => {
     bonziPosition = position;
-    // Broadcast the new position to all clients except the one that moved Bonzi
     socket.broadcast.emit('updateBonzi', bonziPosition);
   });
 
