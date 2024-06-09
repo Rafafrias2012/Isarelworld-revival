@@ -1,15 +1,94 @@
+<!-- index.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bonzi Buddy Drag Game</title>
-  <link rel="stylesheet" href="./styles.css">
-  <script src="./script.js></script>
+  <title>Bonzi Buddies MMO</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="bonzi" class="bonzi"></div>
-
-  <script src="https://cdn.socket.io/socket.io-3.0.4.min.js"></script>
+  <canvas id="game-canvas" width="800" height="600"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/createjs@2.0.0/createjs.min.js"></script>
+  <script src="script.js"></script>
 </body>
+
+
+<style>
+#game-canvas {
+  border: 1px solid black;
+}
+</style>
+
+/* script.js */
+<script>
+const canvas = document.getElementById('game-canvas');
+const stage = new createjs.Stage(canvas);
+const socket = io();
+
+let bonzi;
+let nickname;
+
+// Handle user join
+socket.on('userJoined', (nickname) => {
+  console.log(`User ${nickname} joined`);
+});
+
+// Handle bonzi buddy creation
+socket.on('bonziCreated', (bonziData) => {
+  if (bonziData) {
+    bonzi = new createjs.Bitmap('https://bonziworld.org/img/agents/purple.png');
+    bonzi.x = bonziData.x;
+    bonzi.y = bonziData.y;
+    stage.addChild(bonzi);
+    stage.update();
+  }
+});
+
+// Handle bonzi buddy movement
+socket.on('bonziMoved', (x, y) => {
+  if (bonzi) {
+    bonzi.x = x;
+    bonzi.y = y;
+    stage.update();
+  }
+});
+
+// Handle user leave
+socket.on('userLeft', (nickname) => {
+  console.log(`User ${nickname} left`);
+});
+
+// Create bonzi buddy animation
+const idleAnimation = new createjs.SpriteSheet({
+  images: ['https://bonziworld.org/img/agents/purple.png'],
+  frames: { width: 64, height: 64, regX: 32, regY: 32 },
+  animations: {
+    idle: [0],
+    enter: [277, 302, 'idle', 0.25],
+    leave: [16, 39, 40, 0.25],
+  },
+});
+
+// Handle user input
+canvas.addEventListener('mousedown', (e) => {
+  const x = e.clientX;
+  const y = e.clientY;
+  socket.emit('moveBonzi', x, y);
+});
+
+// Initialize nickname input
+const nicknameInput = document.createElement('input');
+nicknameInput.type = 'text';
+nicknameInput.placeholder = 'Enter nickname';
+document.body.appendChild(nicknameInput);
+
+// Handle nickname submission
+nicknameInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    nickname = nicknameInput.value;
+    socket.emit('join',nickname);
+    nicknameInput.disabled = true;
+  }
+});
+</script>
 </html>
