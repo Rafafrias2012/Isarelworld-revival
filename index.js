@@ -23,16 +23,16 @@ io.on('connection', (socket) => {
 
   // Handle bonzi buddy creation
   socket.on('createBonzi', () => {
-    const bonzi = {
-      x: Math.random() * 500,
-      y: Math.random() * 500,
-      animation: 'idle',
-      frame: 0,
-    };
-    users[socket.id].bonzi = bonzi;
-    socket.emit('bonziCreated', bonzi);
-    socket.broadcast.emit('bonziCreated', bonzi);
-  });
+  const bonzi = {
+    x: Math.random() * 500,
+    y: Math.random() * 500,
+    animation: 'enter',
+    frame: 0,
+  };
+  users[socket.id].bonzi = bonzi;
+  socket.emit('bonziCreated', bonzi);
+  socket.broadcast.emit('bonziCreated', bonzi);
+});
 
   // Handle bonzi buddy movement
   socket.on('moveBonzi', (x, y) => {
@@ -46,11 +46,14 @@ io.on('connection', (socket) => {
 
   // Handle user leave
   socket.on('disconnect', () => {
-    if (users[socket.id]) {
-      delete users[socket.id];
-      socket.broadcast.emit('userLeft', users[socket.id].nickname);
-    }
-  });
+  if (users[socket.id]) {
+    const bonzi = users[socket.id].bonzi;
+    bonzi.animation = 'leave';
+    socket.emit('bonziLeave', bonzi);
+    socket.broadcast.emit('bonziLeave', bonzi);
+    delete users[socket.id];
+  }
+});
 });
 
 server.listen(3000, () => {
