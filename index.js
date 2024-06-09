@@ -1,32 +1,58 @@
 const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const path = require('path');
-
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
 
-const publicPath = path.join(__dirname, 'public');
-app.use(express.static(publicPath));
+// Store users and their bonzi buddies
+const users = {};
 
-let bonziPosition = { x: 0, y: 0 };
+app.use(express.static('public'));
+
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
+});
 
 io.on('connection', (socket) => {
-  console.log('A user connected');
+  console.log('a user connected');
 
-  socket.emit('initialPosition', bonziPosition);
-
-  socket.on('moveBonzi', (position) => {
-    bonziPosition = position;
-    socket.broadcast.emit('updateBonzi', bonziPosition);
+  // Handle user join
+  socket.on('join', (nickname) => {
+    users[socket.id] = { nickname, bonzi: null };
+    socket.broadcast.emit('userJoined', nickname);
   });
 
+  // Handle bonzi buddy creation
+  socket.on('createBonzi', () => {
+    const bonzi = {
+      x: Math.random() * 500,
+      y: Math.random() * 500,
+      animation: 'idle',
+      frame: 0,
+    };
+    users[socket.id].bonzi = bonzi;
+    socket.emit('bonziCreated', bonzi);
+    socket.broadcast.emit('bonziCreated', bonzi);
+  });
+
+  // Handle bonzi buddy movement
+  socket.on('moveBonzi', (x, y) => {
+    if (users[socket.id].bonzi) {
+      users[socket.id].bonzi.x = x;
+      users[socket.id].bonzi.y = y;
+      socket.emit('bonziMoved', x, y);
+      socket.broadcast.emit('bonziMoved', x, y);
+    }
+  });
+
+  // Handle user leave
   socket.on('disconnect', () => {
-    console.log('User disconnected');
+    if (users[socket.id]) {
+      delete users[socket.id];
+      socket.broadcast.emit('userLeft', users[socket.id].nickname);
+    }
   });
 });
 
 server.listen(3000, () => {
-  console.log('Server started on port 3000');
+  console.log('Server listening on port 3000');
 });
