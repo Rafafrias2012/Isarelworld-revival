@@ -41,6 +41,7 @@ socket.on('bonziCreated', (bonziData) => {
     bonzi.y = bonziData.y;
     stage.addChild(bonzi);
     stage.update();
+    bonzi.gotoAndPlay('enter');
   }
 });
 
@@ -49,6 +50,13 @@ socket.on('bonziMoved', (x, y) => {
   if (bonzi) {
     bonzi.x = x;
     bonzi.y = y;
+    stage.update();
+  }
+});
+
+socket.on('bonziLeave', (bonziData) => {
+  if (bonziData) {
+    bonzi.gotoAndPlay('leave');
     stage.update();
   }
 });
